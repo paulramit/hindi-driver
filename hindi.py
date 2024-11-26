@@ -45,27 +45,27 @@ hindi_letter_map = {
     "d": "द",
     "D": "ड",
     "dh": "ध",
-    "Dh": "ढ",
+    "DH": "ढ",
     "f": "फ",
     "F": "फ",
     "ph": "फ",
     "g": "ग",
     "G": "ग",
     "gh": "घ",
-    "Gh": "घ",
+    "GH": "घ",
     "gy": "ज्ञ",
-    "Gy": "ज्ञ",
+    "GY": "ज्ञ",
     "h": "ह",
     "H": "ह",
     "j": "ज",
     "J": "ज",
     "jh": "झ",
-    "Jh": "झ",
+    "JH": "झ",
     "k": "क",
     "K": "क",
     "kh": "ख",
     "Kh": "ख",
-    "ksh": "क्ष",
+    "ks": "क्ष",
     "l": "ल",
     "L": "ल",
     "m": "म",
@@ -113,33 +113,29 @@ hindi_letter_map = {
 ctrl = False
 alt = False
 last = ''
-hindi_mode = False  # Track the current mode
+hindi_mode = False
 
-# Function to handle key press events
 def key_press(key):
-
     ch = key.name
-    global ctrl
-    global alt
-    global last
+    global ctrl, alt, last
 
-    if ch == 'esc':  # Quit if ESC pressed
+    if ch == 'esc':  # Exit application
         close_app()
         return
 
-    if ctrl:  # Check if Ctrl was pressed
+    if ctrl:  # Handle Ctrl key combinations
         keyboard.press('ctrl+' + ch)
         return
     
-    if ch == 'alt':
+    if ch == 'alt':  # Handle Alt key press
         alt = True
         return
     
-    if not hindi_mode:
+    if not hindi_mode:  # Default English typing mode
         keyboard.press(key.name)
-        return  # Skip processing if in normal mode
+        return
     
-    if alt:
+    if alt:  # Handle Alt-specific mappings
         if (last + ch) in hindi_letter_map:
             keyboard.press('backspace')
             keyboard.press('backspace')
@@ -153,95 +149,81 @@ def key_press(key):
             last = ch
             return
 
-    if (last + ch) in hindi_letter_map:
+    if (last + ch) in hindi_letter_map:  # Combine last and current key
         keyboard.press('backspace')
         keyboard.write(hindi_letter_map[last + ch])
         last = ch
         return
 
-    last = ch
+    last = ch  # Update the last key pressed
 
-    if ch == 'ctrl':
+    if ch == 'ctrl':  # Track Ctrl key press
         ctrl = True
 
-    if ch in hindi_letter_map.keys():
+    if ch in hindi_letter_map.keys():  # Write mapped Hindi characters
         keyboard.write(hindi_letter_map[ch])
-    else:
-        keyboard.press(ch)  # Press key if not in hindi_letter_map
+    else:  # Press unmapped characters as is
+        keyboard.press(ch)
     return
 
-# Function to handle key release events
 def key_release(key):
-
     ch = key.name
-    global ctrl
-    global alt
-    if ch in hindi_letter_map.keys():  # Keys in hindi_letter_map were suppressed during press event; no need to release
+    global ctrl, alt
+
+    if ch in hindi_letter_map.keys():  # Skip releasing mapped keys
         return
 
-    keyboard.release(ch)  # Release key ch
-    if ch == 'ctrl':  # Ctrl is released
+    keyboard.release(ch)  # Release regular keys
+    if ch == 'ctrl':  # Reset Ctrl flag
         ctrl = False
-    if ch == 'alt':  # Alt is released
+    if ch == 'alt':  # Reset Alt flag and press backspace
         alt = False
         keyboard.press('backspace')
     return
 
-# Function to toggle between English and Hindi modes
-def toggle():
+def toggle():  # Toggle between English and Hindi modes
     global hindi_mode
     hindi_mode = not hindi_mode
     toggle_button.config(text="Switch to English" if hindi_mode else "Switch to हिंदी")
     print(f"Mode: {'हिंदी' if hindi_mode else 'English'}")
 
-# Function to close app and unregister keyboard events
-def close_app():
-    keyboard.unhook_all()  # Disable all keyboard listeners
-    root.destroy()  # Close the tkinter window
+def close_app():  # Clean up on application exit
+    keyboard.unhook_all()
+    root.destroy()
 
-# Start keyboard listeners
-keyboard.on_press(key_press, suppress=True)  # Call key_press on key press event
-keyboard.on_release(key_release, suppress=True)  # Call key_release on key release event
+keyboard.on_press(key_press, suppress=True)  # Start key press listener
+keyboard.on_release(key_release, suppress=True)  # Start key release listener
 
-# Create a small tkinter window
 root = tk.Tk()
 root.title("Keyboard Mapper")
-root.geometry("400x250")  # Adjust window size for better layout
-root.configure(bg='#333333')  # Dark background color
+root.geometry("400x250")
+root.configure(bg='#333333')
 
-# Load custom font for a more modern look
 font_style = tkFont.Font(family="Arial", size=14, weight="bold")
 
-# Gradient Background (in case you want to create one using canvas)
 canvas = tk.Canvas(root, width=400, height=250)
 canvas.place(x=0, y=0)
 canvas.create_rectangle(0, 0, 400, 250, fill="#1f1f1f", outline="")
 
-# Label widget with custom font and color
-label = tk.Label(root, text="Keyboard Mapper Running", fg="white", bg="#333333", font=font_style)
-label.pack(padx=20, pady=30)  # Add the label to the window with padding
+label = tk.Label(root, text="Keyboard Mapper Running . . .", fg="white", bg="#333333", font=font_style)
+label.pack(padx=20, pady=30)
 
-# Toggle button with modern flat design and rounded corners
 toggle_button = ttk.Button(
     root, 
     text="Switch to हिंदी", 
     command=toggle, 
     style="TButton",
 )
-toggle_button.pack(pady=30)  # Add the button to the window with vertical padding
+toggle_button.pack(pady=30)
 
-# Button Style (Rounded and Flat)
 style = ttk.Style()
 style.configure("TButton",
                 font=('Arial', 12, 'bold'),
                 padding=10,
-                relief="flat",  # Flat button (no border)
-                background="#444444",  # Dark gray button color
-                foreground="black")  # Set text color to black
+                relief="flat",
+                background="#444444",
+                foreground="black")
 style.map("TButton", background=[('active', '#555555')])
 
-# Close event handler
 root.protocol("WM_DELETE_WINDOW", close_app)
-
-# Start tkinter main loop
-root.mainloop()  # Keep the tkinter window running
+root.mainloop()
