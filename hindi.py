@@ -114,6 +114,17 @@ hindi_letter_map = {
     "9": "९",
 }
 
+# Reverse map function
+def create_reverse_map(hindi_map):
+    reverse_map = {}
+    for eng, hindi in hindi_map.items():
+        if hindi not in reverse_map:
+            reverse_map[hindi] = []
+        reverse_map[hindi].append(eng)
+    return reverse_map
+
+reverse_map = create_reverse_map(hindi_letter_map)
+
 ctrl = False
 alt = False
 last = ''
@@ -199,35 +210,73 @@ keyboard.on_press(key_press, suppress=True)  # Start key press listener
 keyboard.on_release(key_release, suppress=True)  # Start key release listener
 
 root = tk.Tk()
-root.title("Keyboard Mapper")
-root.geometry("400x250")
+root.title("Hindi Keyboard Driver")
+root.state('zoomed')  # Maximized screen
 root.configure(bg='#333333')
 
 font_style = tkFont.Font(family="Arial", size=14, weight="bold")
 
-canvas = tk.Canvas(root, width=400, height=250)
-canvas.place(x=0, y=0)
-canvas.create_rectangle(0, 0, 400, 250, fill="#1f1f1f", outline="")
-
-label = tk.Label(root, text="Keyboard Mapper Running . . .", fg="white", bg="#333333", font=font_style)
-label.pack(padx=20, pady=30)
-
+# Toggle Button
 toggle_button = ttk.Button(
     root, 
     text="Switch to हिंदी", 
-    command=toggle, 
-    style="TButton",
+    command=toggle,
 )
-toggle_button.pack(pady=30)
+toggle_button.place(x=20, y=20)  # Positioned on the left-hand side
+toggle_style = ttk.Style()
+toggle_style.configure(
+    "TButton", 
+    font=('Arial', 12, 'bold'), 
+    padding=10, 
+    background="#444444", 
+    foreground="black"
+)
+toggle_style.map("TButton", background=[('active', '#555555')])
 
-style = ttk.Style()
-style.configure("TButton",
-                font=('Arial', 12, 'bold'),
-                padding=10,
-                relief="flat",
-                background="#444444",
-                foreground="black")
-style.map("TButton", background=[('active', '#555555')])
+# Buttons for Hindi letters
+frame = tk.Frame(root, bg='#333333')
+frame.place(x=200, y=50)  # Positioned to the right of the toggle button
+
+button_font = tkFont.Font(family="Arial", size=12, weight="bold")
+row, col = 0, 0
+buttons_per_row = 8
+button_width, button_height = 6, 2
+
+for hindi_letter, combinations in reverse_map.items():
+    button = tk.Button(
+        frame, 
+        text=hindi_letter, 
+        font=button_font, 
+        width=button_width, 
+        height=button_height, 
+        bg="#444444", 
+        fg="white",
+        command=lambda h=hindi_letter: show_combinations(h)  # Show combinations on click
+    )
+    button.grid(row=row, column=col, padx=10, pady=10)
+    col += 1
+    if col >= buttons_per_row:
+        col = 0
+        row += 1
+
+# Output Label
+output_label = tk.Label(
+    root, 
+    text="", 
+    font=('Arial', 14, 'bold'), 
+    bg='#333333', 
+    fg="white", 
+    justify="left"
+)
+output_label.place(relx=0.9, rely=0.5, anchor="center")  # Right-hand side, vertically centered
+
+def show_combinations(hindi_letter):
+    combinations = reverse_map.get(hindi_letter, [])
+    output_label.config(text=f"Combinations for {hindi_letter}: {', '.join(combinations)}")
+
+# Protocol for closing the app
+def close_app():
+    root.destroy()
 
 root.protocol("WM_DELETE_WINDOW", close_app)
 root.mainloop()
